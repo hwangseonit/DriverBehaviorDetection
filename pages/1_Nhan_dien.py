@@ -20,12 +20,12 @@ def download_model_if_not_exists(drive_url, save_path):
             gdown.download(drive_url, save_path, quiet=False)
 
 MODEL_LINKS = {
-    'DenseNetPMai': 'https://drive.google.com/uc?id=1oZmWHY5rub52FnHm1J2IM2kXTZRs6_Ew',
+    'DenseNet': 'https://drive.google.com/uc?id=1oZmWHY5rub52FnHm1J2IM2kXTZRs6_Ew',
     'EfficientNet': 'https://drive.google.com/uc?id=14EGEXZO3L1m8Wbq_fRxLj1uaj-8ewoAf',
     'ResNet': 'https://drive.google.com/uc?id=1MRfaHl_UtMoA9__ok8lZcb2zSELRxmAG'
 }
 MODEL_PATHS = {
-    'DenseNetPMai': 'model/best_model_densenetPMai.h5',
+    'DenseNet': 'model/best_model_densenetPMai.h5',
     'EfficientNet': 'model/best_model_efficientnet.h5',
     'ResNet': 'model/best_model_resnet.h5'
 }
@@ -253,7 +253,7 @@ CLASS_NAMES = ['other_activities', 'safe_driving', 'talking_phone', 'texting_pho
 def load_models():
     try:
         return {
-            'DenseNetPMai': load_model('model/best_model_densenetPMai.h5'),
+            'DenseNet': load_model('model/best_model_densenetPMai.h5'),
             'EfficientNet': load_model('model/best_model_efficientnet.h5'),
             'ResNet': load_model('model/best_model_resnet.h5')
         }
