@@ -277,7 +277,7 @@ st.markdown("""
 <ul>
     <li>Python, Streamlit, TensorFlow/Keras, Pandas, Matplotlib, Custom CSS</li>
     <li>Multi-Page App, Clean Code, Đầy Đủ Documentation</li>
-    <li><b>Github:</b> <a href="https://github.com/hwangseonit/DriverBehaviorDetection.git" target="_blank">hwangseonit</a></li>
+    <li><b>Github:</b> <a href="https://github.com/hwangseonit/DriverBehaviorDetection.git" target="_blank">AI Group 20</a></li>
     <li><b>Email:</b> AIGroup20@gmail.com</li>
 </ul>
 
