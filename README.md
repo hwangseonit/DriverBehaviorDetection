@@ -69,7 +69,7 @@ streamlit run app.py
 ## 🌐 Deploy on Streamlit Cloud
 
 1. Push your repo to GitHub
-2. Go to [https://share.streamlit.io](https://share.streamlit.io)
+2. Go to [https://railway.com/](https://railway.com/)
 3. Select your repo & choose `app.py` as the entry point
 4. Click **Deploy**
 
@@ -94,8 +94,8 @@ https://web-production-c3ee.up.railway.app/
 
 ## 👨‍💻 Authors
 
-- **HwangSeon** – Project Lead
-- Contributors: You and your amazing team!
+- **Group20AI** – Group 20 Artificial Intelligence
+- Contributors: Contributions of all members of the AI ​​20 team!
 
 ---
 
