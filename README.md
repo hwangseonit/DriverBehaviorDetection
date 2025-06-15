@@ -1,6 +1,6 @@
 # 🚦 AI Driver Behavior Classifier PRO
 
-An advanced AI-powered application for classifying driver behavior using deep learning models (AlexNet, VGG16, Inception). Built with **Streamlit**, it offers a sleek, modern UI with real-time image/video prediction, interactive dashboards, and historical logs.
+An advanced AI-powered application for classifying driver behavior using deep learning models (DenseNet, EfficientNet, ResNet). Built with **Streamlit**, it offers a sleek, modern UI with real-time image/video prediction, interactive dashboards, and historical logs.
 
 ![App Screenshot](https://cdn-icons-png.flaticon.com/512/854/854878.png)
 
