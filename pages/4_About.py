@@ -265,7 +265,7 @@ st.markdown("""
 <div class="gioithieu-section-title">🌟 Nổi Bật & Tính Năng</div>
 <ul>
     <li>Giao Diện Hiện Đại – Pastel Glass, Responsive, Thống Kê Trực Quan</li>
-    <li>Đa Mô Hình: VGG16, AlexNet, Inception</li>
+    <li>Đa Mô Hình: DenseNet, EfficientNet, ResNet</li>
     <li>Lưu Lịch Sử, Dashboard Tương Tác, Đánh Giá Hiệu Năng</li>
     <li>Hỗ Trợ Đa Nền Tảng, Mở Rộng Dễ Dàng</li>
     <li class="fun">🎉 Có Easter Egg Khi Bấm 5 Lần Vào Logo App!</li>
@@ -277,8 +277,8 @@ st.markdown("""
 <ul>
     <li>Python, Streamlit, TensorFlow/Keras, Pandas, Matplotlib, Custom CSS</li>
     <li>Multi-Page App, Clean Code, Đầy Đủ Documentation</li>
-    <li><b>Github:</b> <a href="https://github.com/hwangseonit" target="_blank">hwangseonit</a></li>
-    <li><b>Email:</b> your_email@example.com</li>
+    <li><b>Github:</b> <a href="https://github.com/hwangseonit/DriverBehaviorDetection.git" target="_blank">hwangseonit</a></li>
+    <li><b>Email:</b> AIGroup20@gmail.com</li>
 </ul>
 
 <div class="gioithieu-section-title">🌱 Thành Viên & Sứ Mệnh</div>
@@ -292,7 +292,7 @@ st.markdown("""
 <div class="gioithieu-section-title">📅 Thông Tin Khác</div>
 <ul>
     <li><b>Phiên Bản:</b> 2.5.5 (2025)</li>
-    <li>Tham Gia <a href="https://github.com/hwangseonit/ai-driver-behavior-classifier" target="_blank">Github Project</a> Để Góp Ý Và Nhận Quà Tặng Đặc Biệt!</li>
+    <li>Tham Gia <a href="https://github.com/hwangseonit/DriverBehaviorDetection.git" target="_blank">Github Project</a> Để Góp Ý Và Nhận Quà Tặng Đặc Biệt!</li>
     <li>💡 Fun Fact: Đội Nhóm Đã Uống Hơn 100 Cốc Trà Sữa Khi Làm App Này!</li>
 </ul>
 
