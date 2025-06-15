@@ -24,7 +24,7 @@ section[data-testid="stSidebar"] {
 }
 
 /* Menu item container và danh sách menu */
-section[data-testid="stSidebar"] .css-1wvake5, 
+section[data-testid="stSidebar"] .css-1wvake5,
 section[data-testid="stSidebar"] nav[aria-label="Main menu"] {
     padding: 2.1rem 0 0 0;
 }
@@ -36,15 +36,14 @@ section[data-testid="stSidebar"] li {
     margin-bottom: 1.18rem;
 }
 
-/* Link cơ bản */
 section[data-testid="stSidebar"] a {
     font-size: 1.13rem;
     font-weight: 600;
     color: #385898 !important;
     border-radius: 14px;
     padding: 0.8rem 2.1rem;
-    transition: 
-        background 0.19s, 
+    transition:
+        background 0.19s,
         color 0.19s,
         box-shadow 0.19s,
         transform 0.15s;
@@ -57,7 +56,6 @@ section[data-testid="stSidebar"] a {
     background: none;
 }
 
-/* Hover + focus: nổi, nền trắng đục, bóng nhẹ, chữ xanh đậm */
 section[data-testid="stSidebar"] a:hover,
 section[data-testid="stSidebar"] a:focus {
     background: rgba(255,255,255,0.72);
@@ -69,8 +67,7 @@ section[data-testid="stSidebar"] a:focus {
     border: 1.5px solid #bae6fd77;
 }
 
-/* Active: gradient xanh-cam nhạt, chữ trắng + xanh, bóng nổi */
-section[data-testid="stSidebar"] .css-1v0mbdj, 
+section[data-testid="stSidebar"] .css-1v0mbdj,
 section[data-testid="stSidebar"] a[aria-current="page"] {
     background: linear-gradient(90deg,#6dd5ed 10%,#fbc2eb 90%) !important;
     color: #1e293b !important;
@@ -83,19 +80,16 @@ section[data-testid="stSidebar"] a[aria-current="page"] {
     border: 1.7px solid #fbc2eb88;
 }
 
-/* Ẩn dòng đỏ ở trên cùng (nếu muốn) */
 div[data-testid="stDecoration"] {
     background: transparent !important;
     height: 0px !important;
 }
 
-/* Logo hoặc icon sidebar (nếu có) */
 section[data-testid="stSidebar"] img,
 section[data-testid="stSidebar"] svg {
     filter: drop-shadow(0 2px 10px #bae6fd55);
 }
 
-/* Responsive: nhỏ lại */
 @media (max-width: 800px) {
     section[data-testid="stSidebar"] {
         border-radius: 0 0 18px 18px;
@@ -194,7 +188,6 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
-# Tiêu đề đẹp, không xuống dòng chữ "Hành Vi"
 st.markdown("""
 <div class="dashboard-title">
     <span style="font-size:2.1rem;vertical-align:-0.26em;filter:drop-shadow(0 2px 10px #6366f155);margin-right:0.22em;">📊</span>
@@ -202,12 +195,27 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+def remap_predict_column(df):
+    # Đảm bảo nhãn từ file history.csv luôn đồng bộ với CLASS_NAMES
+    mapping = {
+        "other_activities": "Other",
+        "safe_driving": "Safe",
+        "talking_phone": "Talking",
+        "texting_phone": "Texting",
+        "turning": "Turning",
+        "other": "Other",
+        "safe": "Safe",
+        "talking": "Talking",
+        "texting": "Texting"
+    }
+    if "predict" in df.columns:
+        df["predict"] = df["predict"].map(lambda x: mapping.get(str(x).lower(), str(x).title()))
+    return df
+
 with st.container():
     st.markdown('<div class="big-card">', unsafe_allow_html=True)
-    # --- Đọc dữ liệu từ session_state nếu có, ưu tiên hơn file CSV ---
     hist_df = None
     if "history" in st.session_state and st.session_state["history"]:
-        # Chuyển lịch sử từ session_state sang DataFrame
         records = []
         for rec in st.session_state["history"]:
             label = rec.get("label", "")
@@ -223,16 +231,28 @@ with st.container():
         hist_df = pd.read_csv(HISTORY_CSV)
 
     if hist_df is not None and not hist_df.empty:
+        hist_df = remap_predict_column(hist_df)
         st.subheader("Biểu Đồ Số Lượt Dự Đoán Từng Hành Vi")
         counts = hist_df["predict"].value_counts().reindex(CLASS_NAMES, fill_value=0)
         st.bar_chart(counts)
         st.subheader("Tỉ Lệ Hành Vi Được Phát Hiện")
-        st.pyplot(counts.plot.pie(autopct='%1.1f%%', labels=CLASS_NAMES, ylabel='').get_figure())
+        # Tùy chỉnh autopct để ẩn nhãn 0%
+        def autopct_format(pct):
+            return ('%1.1f%%' % pct) if pct > 0 else ''
+        if counts.sum() == 0 or counts.isna().all():
+            st.warning("Chưa có dữ liệu để vẽ biểu đồ tỉ lệ hành vi.")
+        else:
+            st.pyplot(
+                counts.plot.pie(
+                    autopct=autopct_format,
+                    labels=CLASS_NAMES,
+                    ylabel=''
+                ).get_figure()
+            )
         st.markdown("---")
         st.write("**Lịch Sử Gần Nhất:**")
         show_df = hist_df.copy()
         show_df = show_df[["predict", "confidence", "loai_du_doan"]] if "loai_du_doan" in show_df.columns else show_df
-        # Chuyển cột về Title Case để đồng bộ giao diện
         for col in ["predict", "loai_du_doan"]:
             if col in show_df.columns:
                 show_df[col] = show_df[col].astype(str).str.title()
