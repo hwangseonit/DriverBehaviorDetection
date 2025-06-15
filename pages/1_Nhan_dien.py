@@ -35,7 +35,18 @@ for name in MODEL_LINKS:
 
 # ===== BỎ CÁC HÀM TIỀN XỬ LÝ CỦA KERAS, CHỈ CHUẨN HÓA ẢNH VỀ [0, 1] =====
 
+st.set_page_config(page_title="🖼️ Nhận Diện", layout="centered")
 st.markdown("<h1>🚗 Nhận Diện</h1>", unsafe_allow_html=True)
+
+# Thêm mapping nhãn đẹp cho hiển thị và DataFrame
+PRETTY_LABELS = {
+    "other_activities": "Other",
+    "safe_driving": "Safe",
+    "talking_phone": "Talking",
+    "texting_phone": "Texting",
+    "turning": "Turning"
+}
+PRETTY_LABEL_LIST = ["Other", "Safe", "Talking", "Texting", "Turning"]
 
 def save_history(image, predicted_class, confidence, df, mode="Ảnh"):
     if "history" not in st.session_state:
@@ -52,10 +63,14 @@ def save_history(image, predicted_class, confidence, df, mode="Ảnh"):
         "mode": mode
     })
 
+    # Map nhãn model sang nhãn dashboard
+    mapping = PRETTY_LABELS
+    dashboard_class = mapping.get(str(predicted_class).lower(), str(predicted_class).title())
+
     # ===== GHI RA FILE CSV ĐỂ DASHBOARD ĐỌC ĐƯỢC =====
     csv_file = "history.csv"
     csv_row = {
-        "predict": predicted_class,
+        "predict": dashboard_class,
         "confidence": confidence,
         "loai_du_doan": mode
     }
@@ -63,6 +78,7 @@ def save_history(image, predicted_class, confidence, df, mode="Ảnh"):
         pd.DataFrame([csv_row]).to_csv(csv_file, mode='a', header=False, index=False)
     else:
         pd.DataFrame([csv_row]).to_csv(csv_file, mode='w', header=True, index=False)
+
 # ===== CSS=====
 st.markdown("""
 <style>
@@ -262,7 +278,10 @@ def preprocess_image(image, model_name):
 def predict(model, img_array):
     predictions = model.predict(img_array)
     predicted_class = CLASS_NAMES[np.argmax(predictions)]
-    return predicted_class, predictions
+    # Map xác suất sang nhãn đẹp cho DataFrame
+    pretty_probs = {PRETTY_LABELS[cls]: float(predictions[0][i]) for i, cls in enumerate(CLASS_NAMES)}
+    pretty_probs_ordered = [pretty_probs[label] for label in PRETTY_LABEL_LIST]
+    return predicted_class, [pretty_probs_ordered]
 
 def query_dify_bot(prompt):
     url = "https://api.dify.ai/v1/chat-messages"
@@ -310,12 +329,13 @@ if option == "Ảnh":
             model = models[model_choice]
             input_array = preprocess_image(image, model_choice)
             if input_array is not None:
-                predicted_class, predictions = predict(model, input_array)
-                confidence = float(np.max(predictions))
-                st.session_state.predicted_class = predicted_class
+                predicted_class, pretty_predictions = predict(model, input_array)
+                pretty_label = PRETTY_LABELS.get(predicted_class, predicted_class)
+                confidence = float(np.max(pretty_predictions))
+                st.session_state.predicted_class = pretty_label
                 st.session_state.confidence = confidence
-                st.session_state.df = pd.DataFrame(predictions, columns=CLASS_NAMES)
-                save_history(image, predicted_class, confidence, st.session_state.df, mode="Ảnh")
+                st.session_state.df = pd.DataFrame(pretty_predictions, columns=PRETTY_LABEL_LIST)
+                save_history(image, pretty_label, confidence, st.session_state.df, mode="Ảnh")
 
 elif option == "Video":
     uploaded_video = st.file_uploader("📹 Tải video", type=["mp4", "avi", "mov"])
@@ -341,20 +361,21 @@ elif option == "Video":
                     first_frame_img = img_pil.copy()  # Lưu frame đầu làm đại diện
                 input_array = preprocess_image(img_pil, model_choice)
                 if input_array is not None:
-                    _, pred = predict(model, input_array)
-                    predictions_accum.append(pred[0])
+                    _, pretty_probs = predict(model, input_array)
+                    predictions_accum.append(pretty_probs[0])
                 frame_count += 1
         cap.release()
         os.unlink(tfile.name)
         if predictions_accum:
             avg_pred = np.mean(predictions_accum, axis=0)
-            predicted_class = CLASS_NAMES[np.argmax(avg_pred)]
+            idx = int(np.argmax(avg_pred))
+            pretty_label = PRETTY_LABEL_LIST[idx]
             confidence = float(np.max(avg_pred))
-            st.session_state.predicted_class = predicted_class
+            st.session_state.predicted_class = pretty_label
             st.session_state.confidence = confidence
-            st.session_state.df = pd.DataFrame([avg_pred], columns=CLASS_NAMES)
+            st.session_state.df = pd.DataFrame([avg_pred], columns=PRETTY_LABEL_LIST)
             if first_frame_img is not None:
-                save_history(first_frame_img, predicted_class, confidence, st.session_state.df, mode="Video")
+                save_history(first_frame_img, pretty_label, confidence, st.session_state.df, mode="Video")
 
 # ===== Hiển thị kết quả =====
 if "predicted_class" in st.session_state:
