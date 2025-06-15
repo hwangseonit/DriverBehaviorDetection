@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="🖼️ Nhận Diện", layout="centered")
 import numpy as np
 from PIL import Image
 import cv2
@@ -34,7 +35,6 @@ for name in MODEL_LINKS:
 
 # ===== BỎ CÁC HÀM TIỀN XỬ LÝ CỦA KERAS, CHỈ CHUẨN HÓA ẢNH VỀ [0, 1] =====
 
-st.set_page_config(page_title="🖼️ Nhận Diện", layout="centered")
 st.markdown("<h1>🚗 Nhận Diện</h1>", unsafe_allow_html=True)
 
 def save_history(image, predicted_class, confidence, df, mode="Ảnh"):
