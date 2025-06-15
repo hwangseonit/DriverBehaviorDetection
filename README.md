@@ -12,7 +12,7 @@ An advanced AI-powered application for classifying driver behavior using deep le
   Upload driver images/videos to detect behaviors in real-time.
 
 - 🧠 **Multiple AI Models Supported**  
-  Switch between AlexNet, VGG16, and GoogLeNet (Inception V1).
+  Switch between DenseNet, ResNet, and EfficientNet.
 
 - 📊 **Live Dashboard Analytics**  
   View prediction distribution and historical logs via interactive charts.
@@ -52,7 +52,7 @@ Driver Behavior Detection/
 
 ### 🔧 Prerequisites
 
-- Python 3.8+
+- Python 3.10
 - Pip
 
 ### 📥 Setup
@@ -76,7 +76,7 @@ streamlit run app.py
 📎 You’ll get a live link like:
 
 ```
-https://your-username-driver-behavior.streamlit.app
+https://web-production-c3ee.up.railway.app/
 ```
 
 ---
