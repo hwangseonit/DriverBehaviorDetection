@@ -70,7 +70,7 @@ streamlit run app.py
 
 1. Push your repo to GitHub
 2. Go to [https://railway.com/](https://railway.com/)
-3. Select your repo & choose `app.py` as the entry point
+3. Select your repo & choose `App.py` as the entry point
 4. Click **Deploy**
 
 📎 You’ll get a live link like:
