@@ -8,8 +8,10 @@ import os
 import pandas as pd
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
+import matplotlib.pyplot as plt
 import requests
 from io import BytesIO
+from collections import Counter
 
 # ==== Download Model ====
 def download_model_if_not_exists(drive_url, save_path):
@@ -313,18 +315,18 @@ models = load_models()
 if not models:
     st.stop()
 
-model_choice = st.selectbox("🧠 Chọn mô hình", list(models.keys()))
-option = st.radio("📂 Chọn loại đầu vào", ["Ảnh", "Video"])
+model_choice = st.selectbox("🧠 Chọn Mô Hình", list(models.keys()))
+option = st.radio("📂 Chọn Loại Đầu Vào", ["Ảnh", "Video"])
 
 if option == "Ảnh":
-    uploaded_image = st.file_uploader("🖼️ Tải ảnh", type=["jpg", "jpeg", "png"])
+    uploaded_image = st.file_uploader("🖼️ Tải Ảnh", type=["jpg", "jpeg", "png"])
     # Xóa kết quả khi không còn ảnh
     if not uploaded_image:
         clear_prediction_state()
     if uploaded_image:
         image = Image.open(uploaded_image)
-        st.image(image, caption="Ảnh đã tải", use_container_width=True)
-        if st.button("🚀 Dự đoán từ ảnh"):
+        st.image(image, caption="Ảnh Đã Tải", use_container_width=True)
+        if st.button("🚀 Dự Đoán Từ Ảnh"):
             model = models[model_choice]
             input_array = preprocess_image(image, model_choice)
             if input_array is not None:
@@ -337,58 +339,165 @@ if option == "Ảnh":
                 save_history(image, pretty_label, confidence, st.session_state.df, mode="Ảnh")
 
 elif option == "Video":
-    uploaded_video = st.file_uploader("📹 Tải video", type=["mp4", "avi", "mov"])
-    # Xóa kết quả khi không còn video
+    uploaded_video = st.file_uploader("📹 Tải Video", type=["mp4", "avi", "mov"])
     if not uploaded_video:
-        clear_prediction_state()
+        # Xóa trạng thái nếu không có video
+        if "frame_results" in st.session_state:
+            del st.session_state["frame_results"]
     if uploaded_video:
-        tfile = tempfile.NamedTemporaryFile(delete=False)
-        tfile.write(uploaded_video.read())
-        cap = cv2.VideoCapture(tfile.name)
-        model = models[model_choice]
-        frame_count = 0
-        predictions_accum = []
-        first_frame_img = None
-        with st.spinner("⏳ Đang xử lý video..."):
-            while cap.isOpened() and frame_count < 30:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img_pil = Image.fromarray(frame_rgb)
-                if first_frame_img is None:
-                    first_frame_img = img_pil.copy()  # Lưu frame đầu làm đại diện
-                input_array = preprocess_image(img_pil, model_choice)
-                if input_array is not None:
-                    _, pretty_probs = predict(model, input_array)
-                    predictions_accum.append(pretty_probs[0])
-                frame_count += 1
-        cap.release()
-        os.unlink(tfile.name)
-        if predictions_accum:
-            avg_pred = np.mean(predictions_accum, axis=0)
-            idx = int(np.argmax(avg_pred))
-            pretty_label = PRETTY_LABEL_LIST[idx]
-            confidence = float(np.max(avg_pred))
-            st.session_state.predicted_class = pretty_label
-            st.session_state.confidence = confidence
-            st.session_state.df = pd.DataFrame([avg_pred], columns=PRETTY_LABEL_LIST)
-            if first_frame_img is not None:
-                save_history(first_frame_img, pretty_label, confidence, st.session_state.df, mode="Video")
+        # Phân tích video duy nhất 1 lần mỗi lần upload/model đổi
+        if (
+            "frame_results" not in st.session_state or
+            st.session_state.get("video_name") != uploaded_video.name or
+            st.session_state.get("model_choice") != model_choice
+        ):
+            st.session_state["video_name"] = uploaded_video.name
+            st.session_state["model_choice"] = model_choice
+
+            tfile = tempfile.NamedTemporaryFile(delete=False)
+            tfile.write(uploaded_video.read())
+            tfile.close()
+            cap = cv2.VideoCapture(tfile.name)
+            model = models[model_choice]
+            frame_results = []
+            frame_idx = 0
+            with st.spinner("⏳ Đang Xử Lý Video..."):
+                while cap.isOpened():
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    # Lấy mỗi 5 frame cho nhanh (tùy chỉnh N nếu cần)
+                    if frame_idx % 5 == 0:
+                        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        img_pil = Image.fromarray(frame_rgb)
+                        input_array = preprocess_image(img_pil, model_choice)
+                        if input_array is not None:
+                            predicted_class, pretty_predictions = predict(model, input_array)
+                            pretty_label = PRETTY_LABELS.get(predicted_class, predicted_class)
+                            confidence = float(np.max(pretty_predictions))
+                            df_frame = pd.DataFrame(pretty_predictions, columns=PRETTY_LABEL_LIST)
+                            frame_results.append({
+                                "img": img_pil.copy(),
+                                "label": pretty_label,
+                                "confidence": confidence,
+                                "df": df_frame,
+                                "frame_idx": frame_idx
+                            })
+                    frame_idx += 1
+            cap.release()
+            os.unlink(tfile.name)
+            st.session_state.frame_results = frame_results
+
+            # Lưu 1 record tổng vào history (chỉ lưu 1 dòng cho mỗi video)
+            labels = [fr["label"] for fr in frame_results]
+            behavior_stats = dict(Counter(labels))
+            buf = BytesIO()
+            frame_results[0]["img"].save(buf, format="PNG")
+            thumbnail_bytes = buf.getvalue()
+            if "history" not in st.session_state:
+                st.session_state["history"] = []
+            st.session_state["history"].append({
+                "mode": "Video",
+                "video_name": uploaded_video.name,
+                "created_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "behavior_stats": behavior_stats,
+                "thumbnail_bytes": thumbnail_bytes
+            })
+
+    # Hiển thị giao diện nếu đã có kết quả
+    if st.session_state.get("frame_results"):
+        frame_results = st.session_state.frame_results  # Làm biến tắt cho tiện
+        # 1. Slider chọn frame, xem kết quả giống phần ảnh
+        st.markdown('<div id="frame_view"></div>', unsafe_allow_html=True)
+        if "jump_to_frame_idx" in st.session_state:
+            frame_slider_value = st.session_state.jump_to_frame_idx
+            del st.session_state.jump_to_frame_idx
+        else:
+            frame_slider_value = 0
+
+        idx = st.slider(
+            "Chọn Khung Hình",
+            min_value=0,
+            max_value=len(frame_results) - 1,
+            value=frame_slider_value,
+            key="frame_slider"
+        )
+        frame = frame_results[idx]
+        st.image(frame["img"], caption=f"Khung Hình {frame['frame_idx']}", use_container_width=True)
+        st.markdown(f'<div class="result-label">🚩 {frame["label"].upper()}</div>', unsafe_allow_html=True)
+        st.progress(frame["confidence"], text=f"Độ Tin Cậy: {frame['confidence']:.2%}")
+        with st.expander("📊 Xem Chi Tiết Phân Bố Dự Đoán"):
+            st.dataframe(frame["df"].style.format("{:.2%}"))
+
+        # AI nhận xét từng frame
+        st.subheader(f"🤖 AI Nhận Xét Cho Khung Hình {frame['frame_idx']}")
+        user_question = st.text_input("💬 Câu Hỏi Về Khung Hình Này", key=f"aiq_{idx}")
+        ask = st.button("📨 Gửi Câu Hỏi", key=f"aib_{idx}")
+        if ask and user_question:
+            with st.spinner("🤖 AI Đang Suy Nghĩ..."):
+                ai_answer = query_dify_bot(
+                    f"Người Dùng Hỏi: {user_question}. Kết Quả Phân Loại Hành Vi Của Khung Hình Này Là: {frame['label']}")
+                st.markdown(f"<div class='result-box'>{ai_answer}</div>", unsafe_allow_html=True)
+
+        # 2. Biểu đồ phân bố hành vi toàn video
+        st.header("📈 Thống Kê Hành Vi Toàn Video")
+        labels = [fr["label"] for fr in frame_results]
+        label_counts = pd.Series(labels).value_counts()
+        st.subheader("Pie Chart Tỷ Lệ Hành Vi")
+        fig1, ax1 = plt.subplots()
+        ax1.pie(label_counts, labels=label_counts.index, autopct='%1.1f%%', startangle=140)
+        ax1.axis('equal')
+        st.pyplot(fig1)
+        st.subheader("Timeline Hành Vi (Frame - Nhãn)")
+        import plotly.graph_objects as go
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(
+            x=[fr["frame_idx"] for fr in frame_results],
+            y=labels,
+            mode="lines+markers",
+            line=dict(shape="hv"),
+            marker=dict(size=10)
+        ))
+        fig2.update_layout(xaxis_title="Frame", yaxis_title="Hành Vi")
+        st.plotly_chart(fig2, use_container_width=True)
+
+        # 3. AI nhận xét/tóm tắt toàn video
+        st.header("🤖 AI Nhận Xét Tổng Thể Video")
+        if st.button("📝 Viết Nhận Xét Tổng Quan"):
+            label_counts = pd.Series([fr["label"] for fr in frame_results]).value_counts().to_dict()
+            prompt = f"""
+Video này có tổng {len(frame_results)} khung hình được phân tích.
+Thống kê nhãn: {label_counts}.
+Hãy viết nhận xét tổng quan về mức độ an toàn của tài xế, hành vi nguy hiểm, và khuyến nghị nếu có.
+"""
+            with st.spinner("🤖 AI Đang Nhận Xét Toàn Video..."):
+                summary = query_dify_bot(prompt)
+                st.markdown(f"<div class='result-box'>{summary}</div>", unsafe_allow_html=True)
+
+        # 4. Tải báo cáo CSV
+        st.header("📄 Tải Báo Cáo")
+        df_all = pd.DataFrame([{
+            "Frame": fr["frame_idx"],
+            "Hành vi": fr["label"],
+            "Độ tin cậy": fr["confidence"],
+            **{f"{PRETTY_LABEL_LIST[i]}": fr["df"].iloc[0,i] for i in range(len(PRETTY_LABEL_LIST))}
+        } for fr in frame_results])
+        csv = df_all.to_csv(index=False).encode()
+        st.download_button("⬇️ Tải Báo Cáo CSV", csv, file_name="video_report.csv", mime="text/csv")
 
 # ===== Hiển thị kết quả =====
 if "predicted_class" in st.session_state:
     st.markdown(f'<div class="result-label">🚩 {st.session_state.predicted_class.upper()}</div>', unsafe_allow_html=True)
     st.progress(st.session_state.confidence, text=f"Độ tin cậy: {st.session_state.confidence:.2%}")
-    with st.expander("📊 Xem chi tiết phân bố dự đoán"):
+    with st.expander("📊 Xem Chi Tiết Phân Bố Dự Đoán"):
         df = st.session_state.df
         st.dataframe(df.style.format("{:.2%}"))
 
     # ===== AI Trợ lý =====
     st.subheader("🤖 AI Trợ Lý Giải Thích")
-    user_question = st.text_input("💬 Câu hỏi của bạn về hành vi này")
-    ask = st.button("📨 Gửi câu hỏi")
+    user_question = st.text_input("💬 Câu Hỏi Của Bạn Về Hành Vi Này")
+    ask = st.button("📨 Gửi Câu Hỏi")
     if ask and user_question:
-        with st.spinner("🤖 AI đang suy nghĩ..."):
+        with st.spinner("🤖 AI Đang Suy Nghĩ..."):
             ai_answer = query_dify_bot(f"Người dùng hỏi: {user_question}. Kết quả phân loại hành vi là: {st.session_state.predicted_class}")
-            st.markdown(f"<div class='result-box'>{ai_answer}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='result-box'>{ai_answer}</div>",  unsafe_allow_html=True)
