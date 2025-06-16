@@ -152,8 +152,12 @@ if "history" in st.session_state and st.session_state["history"]:
         mode = record.get("mode", "Ảnh")
         if mode == "Ảnh":
             st.markdown('<div class="result-label">🖼️ ẢNH</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="result-box">Độ Tin Cậy: {record["confidence"]:.2%} <br>Loại: {mode}</div>', unsafe_allow_html=True)
-            st.image(BytesIO(record["image_bytes"]), caption=f"Ảnh Dại Diện ({mode})", use_container_width=True)
+            st.markdown(
+                f'<div class="result-box">Độ Tin Cậy: {record["confidence"]:.2%} <br>Kết Quả Dự Đoán: {record["label"]}</div>',
+                unsafe_allow_html=True
+            )
+            st.image(BytesIO(record["image_bytes"]), caption=f"Ảnh Đại Diện ({record['label']})",
+                     use_container_width=True)
             if "details" in record:
                 with st.expander("📊 Xem Chi Tiết Phân Bố Dự Đoán"):
                     st.dataframe(record["details"].style.format("{:.2%}"))
