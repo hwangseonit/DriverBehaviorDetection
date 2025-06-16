@@ -4,7 +4,9 @@ from io import BytesIO
 # ==== Cấu Hình Trang ====
 st.set_page_config(page_title="📜 Lịch sử", layout="centered")
 st.markdown("<h1>📜 Lịch Sử Dự Đoán Hành Vi Lái Xe</h1>", unsafe_allow_html=True)
-# ==== CSS và tiêu đề giống 1_Nhan_dien ====
+
+# ==== CSS ====
+
 st.markdown("""
 <style>
     /* Sidebar nền glass sáng, gradient xanh-cam nhạt, bóng đổ nhẹ */
@@ -148,17 +150,24 @@ h1 {
 if "history" in st.session_state and st.session_state["history"]:
     for record in reversed(st.session_state["history"]):
         mode = record.get("mode", "Ảnh")
-        icon = "🖼️" if mode == "Ảnh" else "📹"
-        # Hiển thị nhãn và loại dự đoán
-        st.markdown(f'<div class="result-label">🚩 {record["label"].upper()} {icon} <span style="font-size:1.1rem;">({mode})</span></div>', unsafe_allow_html=True)
-        # Hiển thị độ tin cậy và loại
-        st.markdown(f'<div class="result-box">Độ tin cậy: {record["confidence"]:.2%} <br>Loại: {mode}</div>', unsafe_allow_html=True)
-        # Hiển thị ảnh đại diện
-        st.image(BytesIO(record["image_bytes"]), caption=f"Ảnh đại diện ({mode})", use_container_width=True)
-        # Hiển thị bảng phân bố xác suất nếu có
-        if "details" in record:
-            with st.expander("📊 Xem chi tiết phân bố dự đoán"):
-                st.dataframe(record["details"].style.format("{:.2%}"))
+        if mode == "Ảnh":
+            st.markdown('<div class="result-label">🖼️ ẢNH</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="result-box">Độ Tin Cậy: {record["confidence"]:.2%} <br>Loại: {mode}</div>', unsafe_allow_html=True)
+            st.image(BytesIO(record["image_bytes"]), caption=f"Ảnh Dại Diện ({mode})", use_container_width=True)
+            if "details" in record:
+                with st.expander("📊 Xem Chi Tiết Phân Bố Dự Đoán"):
+                    st.dataframe(record["details"].style.format("{:.2%}"))
+        elif mode == "Video":
+            st.markdown(f'<div class="result-label">🎞️ VIDEO</div>', unsafe_allow_html=True)
+            # Hiển thị ảnh đại diện (frame đầu video)
+            if "thumbnail_bytes" in record:
+                st.image(BytesIO(record["thumbnail_bytes"]), caption="Ảnh Đại Diện (Video)", use_container_width=True)
+            # Hiển thị tỉ lệ các hành vi
+            stats = record.get("behavior_stats", {})
+            if stats:
+                stat_df = pd.DataFrame([stats])
+                st.markdown("### 📊 Tỉ Lệ Các Hành Vi Trong Video")
+                st.dataframe(stat_df.style.format("{:.0f}"))
         st.markdown("---")
 else:
-    st.info("Chưa có lịch sử dự đoán nào.")
+    st.info("Chưa Có Lịch Sử Dự Đoán Nào.")
