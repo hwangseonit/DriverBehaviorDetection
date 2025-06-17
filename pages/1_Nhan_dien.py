@@ -264,13 +264,14 @@ def load_models():
         return {}
 
 # ===== TIỀN XỬ LÝ: CHỈ CHIA 255 =====
-def preprocess_image(image, model_name):
+def preprocess_image(image):
     try:
         if image.mode != "RGB":
             image = image.convert("RGB")
         image = image.resize((224, 224))
         arr = img_to_array(image)
         arr = arr / 255.0
+        arr = arr.astype(np.float32)
         return np.expand_dims(arr, axis=0)
     except Exception as e:
         st.error(f"Lỗi tiền xử lý ảnh: {e}")
@@ -328,7 +329,7 @@ if option == "Ảnh":
         st.image(image, caption="Ảnh Đã Tải", use_container_width=True)
         if st.button("🚀 Dự Đoán Từ Ảnh"):
             model = models[model_choice]
-            input_array = preprocess_image(image, model_choice)
+            input_array = preprocess_image(image)
             if input_array is not None:
                 predicted_class, pretty_predictions = predict(model, input_array)
                 pretty_label = PRETTY_LABELS.get(predicted_class, predicted_class)
@@ -370,7 +371,7 @@ elif option == "Video":
                     if frame_idx % 5 == 0:
                         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         img_pil = Image.fromarray(frame_rgb)
-                        input_array = preprocess_image(img_pil, model_choice)
+                        input_array = preprocess_image(img_pil)
                         if input_array is not None:
                             predicted_class, pretty_predictions = predict(model, input_array)
                             pretty_label = PRETTY_LABELS.get(predicted_class, predicted_class)
