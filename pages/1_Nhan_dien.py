@@ -256,7 +256,7 @@ def load_models():
     try:
         return {
             'DenseNet': load_model('model/best_model_densenetPMai.h5'),
-            'EfficientNet': load_model('model/best_model_efficientnet.h5'),
+            'EfficientNet': load_model('model/best_model_efficientnet_final.h5'),
             'ResNet': load_model('model/best_model_resnet.h5')
         }
     except Exception as e:
