@@ -23,12 +23,12 @@ def download_model_if_not_exists(drive_url, save_path):
 
 MODEL_LINKS = {
     'DenseNet': 'https://drive.google.com/uc?id=1oZmWHY5rub52FnHm1J2IM2kXTZRs6_Ew',
-    'EfficientNet': 'https://drive.google.com/uc?id=14EGEXZO3L1m8Wbq_fRxLj1uaj-8ewoAf',
+    'EfficientNet': 'https://drive.google.com/uc?id=1J3U4HbkYpmgp6BO5z2O4JsCV9rG43R8J',
     'ResNet': 'https://drive.google.com/uc?id=1MRfaHl_UtMoA9__ok8lZcb2zSELRxmAG'
 }
 MODEL_PATHS = {
     'DenseNet': 'model/best_model_densenetPMai.h5',
-    'EfficientNet': 'model/best_model_efficientnet.h5',
+    'EfficientNet': 'model/best_model_efficientnet_final.h5',
     'ResNet': 'model/best_model_resnet.h5'
 }
 
